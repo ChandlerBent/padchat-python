@@ -1,0 +1,4 @@
+qrcode[pil]==6.0
+qrcode-terminal==0.8
+requests==2.18.4
+tornado==5.0.2
