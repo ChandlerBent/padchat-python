@@ -41,6 +41,7 @@ import padchat
 user = padchat.PadchatClient.select_user()
 
 client = padchat.PadchatClient(**{user or {}})
+client.connect('ws://52.80.34.207:7780')
 client.run()
 ```
 
@@ -63,6 +64,7 @@ class CustomPadchatClient(padchat.PadchatClient):
 user = CustomPadchatClient.select_user()
 
 client = CustomPadchatClient(**{user or {}})
+client.connect('ws://52.80.34.207:7780')
 client.run()
 ```
 
