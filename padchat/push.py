@@ -4,10 +4,6 @@
 
 
 class PadchatPushMixin:
-    def _is_group_msg(self, context):
-        from_user = context.get('from_user')
-        return from_user.endswith('@chatroom')
-
     def text_msg(self, context):
         '''
         文字信息

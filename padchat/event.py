@@ -153,6 +153,8 @@ class PadChatEventMixin:
             elif sub_type == 49:
                 logger.debug('APP消息')
                 content = push.get('content')
+                if self._is_group_msg(push):
+                    from_user, content = content.split(':\n', 1)
                 xml = minidom.parseString(content)
                 appmsg = xml.getElementsByTagName('appmsg')[0]
                 type = appmsg.getElementsByTagName('type')[0].childNodes[0].data
@@ -205,3 +207,7 @@ class PadChatEventMixin:
         logger.warning('实例已关闭')
         logger.info('重新连接服务器')
         self._connect()
+
+    def _is_group_msg(self, context):
+        from_user = context.get('from_user')
+        return from_user.endswith('@chatroom')
