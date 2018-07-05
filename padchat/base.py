@@ -158,7 +158,7 @@ class BasePadchatClient(WebSocketClient):
     def _on_connection_close(self):
         logger.info('与Padchat服务器连接已中断')
         logger.info('重新连接Padchat服务器……')
-        self.connect()
+        self._connect()
 
     def _on_connection_error(self, exception):
         logger.error('异常出错，错误：', exception, exc_info=True)
