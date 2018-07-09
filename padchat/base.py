@@ -48,7 +48,9 @@ class WebSocketClient:
                                          connect_timeout=self.connect_timeout,
                                          request_timeout=self.request_timeout,
                                          headers=headers)
-        ws_conn = websocket.WebSocketClientConnection(request)
+        ws_conn = websocket.WebSocketClientConnection(request,
+                                                      ping_interval=30,
+                                                      ping_timeout=15)
         self._ws_connection = ws_conn
         ws_conn.connect_future.add_done_callback(self._connect_callback)
 
@@ -97,7 +99,6 @@ class WebSocketClient:
     def _on_connection_success(self):
         """This is called on successful connection ot the server.
         """
-        self.send('{"cmd": "init", "type": "user", "cmdId": "1"}')
         pass
 
     def _on_connection_close(self):
