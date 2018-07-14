@@ -82,5 +82,5 @@ if __name__ == '__main__':
     user = TestClient.select_user()
 
     client = TestClient(**(user or {}))
-    client.connect('ws://52.80.34.207:7780')
+    client.connect('ws://52.80.34.207:7777')
     client.run()

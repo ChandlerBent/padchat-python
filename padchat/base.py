@@ -49,8 +49,7 @@ class WebSocketClient:
                                          request_timeout=self.request_timeout,
                                          headers=headers)
         ws_conn = websocket.WebSocketClientConnection(request,
-                                                      ping_interval=30,
-                                                      ping_timeout=15)
+                                                      ping_interval=30)
         self._ws_connection = ws_conn
         ws_conn.connect_future.add_done_callback(self._connect_callback)
 
@@ -83,11 +82,17 @@ class WebSocketClient:
     @gen.coroutine
     def _read_messages(self):
         while True:
-            msg = yield self._ws_connection.read_message()
+            msg = yield self._ws_connection.read_message(
+                callback=self.__on_message)
             if msg is None:
                 self._on_connection_close()
                 break
 
+            # self._on_message(msg)
+
+    def __on_message(self, future):
+        msg = future.result()
+        if msg is not None:
             self._on_message(msg)
 
     def _on_message(self, msg):
@@ -159,7 +164,7 @@ class BasePadchatClient(WebSocketClient):
     def _on_connection_close(self):
         logger.info('与Padchat服务器连接已中断')
         logger.info('重新连接Padchat服务器……')
-        self.connect()
+        self._connect()
 
     def _on_connection_error(self, exception):
         logger.error('异常出错，错误：', exception, exc_info=True)
