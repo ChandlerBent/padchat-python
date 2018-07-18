@@ -48,7 +48,8 @@ class WebSocketClient:
                                          connect_timeout=self.connect_timeout,
                                          request_timeout=self.request_timeout,
                                          headers=headers)
-        ws_conn = websocket.WebSocketClientConnection(request)
+        ws_conn = websocket.WebSocketClientConnection(request,
+                                                      ping_interval=30)
         self._ws_connection = ws_conn
         ws_conn.connect_future.add_done_callback(self._connect_callback)
 
@@ -81,11 +82,17 @@ class WebSocketClient:
     @gen.coroutine
     def _read_messages(self):
         while True:
-            msg = yield self._ws_connection.read_message()
+            msg = yield self._ws_connection.read_message(
+                callback=self.__on_message)
             if msg is None:
                 self._on_connection_close()
                 break
 
+            # self._on_message(msg)
+
+    def __on_message(self, future):
+        msg = future.result()
+        if msg is not None:
             self._on_message(msg)
 
     def _on_message(self, msg):
@@ -97,7 +104,6 @@ class WebSocketClient:
     def _on_connection_success(self):
         """This is called on successful connection ot the server.
         """
-        self.send('{"cmd": "init", "type": "user", "cmdId": "1"}')
         pass
 
     def _on_connection_close(self):
