@@ -45,7 +45,8 @@ class PadChatEventMixin:
     def _qrcode(self, data, style='img'):
         logger.debug(data)
         if style == 'img':
-            qrcode.make(data)
+            image = qrcode.make(data)
+            image.save('qrcode.png')
         elif style == 'terminal':
             qrcode_terminal.draw(data)
 
