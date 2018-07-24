@@ -240,7 +240,7 @@ class BasePadchatClient(WebSocketClient):
         index = input('不输入或0则为新用户登录: ')
         logger.debug(index)
         profile = None
-        if index:
+        if index and index != '0':
             nickname = dict(user_profile_map).get(int(index)-1, None)
             if nickname is None:
                 raise IndexError('用户序号不存在')
