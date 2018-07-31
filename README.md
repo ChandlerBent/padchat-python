@@ -5,6 +5,12 @@ Padchat-python-SDK
 该项目为[Padchat](https://github.com/binsee/padchat-sdk)的python SDK，具体接口用法
 以 `Padchat` 接口文档为准。
 
+## 更新历史
+
+日期 | 内容
+--- | ---
+2018.7.31 | 添加心跳事件，可在心跳事件中做其他操作。
+
 Padchat SDK版本
 * [padchat-sdk](https://github.com/binsee/padchat-sdk) - Padchat Node SDK，由
 `Padchat` 服务开发者提供
@@ -12,7 +18,7 @@ Padchat SDK版本
 [fastgoo] 开发者提供
 
 ### 运行环境
-* python3 (测试环境为3.6)
+* python3.5 (测试环境为3.6)
 * tornado
 
 
@@ -64,6 +70,23 @@ class CustomPadchatClient(padchat.PadchatClient):
 user = CustomPadchatClient.select_user()
 
 client = CustomPadchatClient(**{user or {}})
+client.connect('ws://52.80.34.207:7780')
+client.run()
+```
+
+#### 心跳事件
+
+```python
+import padchat
+
+class CustomPadchatClient(padchat.PadchatClient):
+    def ping(self):
+        pass
+        # 此处可以从redis或者消息组件中获取数据，主动推送消息。
+    
+user = CustomPadchatClient.select_user()
+
+client = CustomPadchatClient(**{user or {}}, ping_interval=30)
 client.connect('ws://52.80.34.207:7780')
 client.run()
 ```

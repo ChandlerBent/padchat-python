@@ -20,17 +20,33 @@ DEFAULT_CONNECT_TIMEOUT = 60
 DEFAULT_REQUEST_TIMEOUT = 60
 
 
+class PadchatSocketProtocol13(websocket.WebSocketProtocol13):
+    pass
+
+
+class PadchatSocketClientConnection(websocket.WebSocketClientConnection):
+    def get_websocket_protocol(self):
+        return PadchatSocketProtocol13(self, mask_outgoing=True,
+                                   compression_options=self.compression_options)
+
+
 class WebSocketClient:
     """Base for web socket clients.
     """
 
     def __init__(self, *, connect_timeout=DEFAULT_CONNECT_TIMEOUT,
-                 request_timeout=DEFAULT_REQUEST_TIMEOUT):
+                 request_timeout=DEFAULT_REQUEST_TIMEOUT, ping_interval=30):
 
         self.connect_timeout = connect_timeout
         self.request_timeout = request_timeout
+        self.ping_interval = ping_interval
 
         self._url = None
+
+        def periodic_ping(_self):
+            super(PadchatSocketProtocol13, _self).periodic_ping()
+            self.ping()
+        PadchatSocketProtocol13.periodic_ping = periodic_ping
 
     def run(self):
         ioloop.IOLoop.instance().start()
@@ -43,15 +59,19 @@ class WebSocketClient:
         self._connect()
 
     def _connect(self):
+
         headers = httputil.HTTPHeaders({'Content-Type': APPLICATION_JSON})
         request = httpclient.HTTPRequest(url=self._url,
                                          connect_timeout=self.connect_timeout,
                                          request_timeout=self.request_timeout,
                                          headers=headers)
-        ws_conn = websocket.WebSocketClientConnection(request,
-                                                      ping_interval=30)
+        ws_conn = PadchatSocketClientConnection(request,
+                                                ping_interval=self.ping_interval)
         self._ws_connection = ws_conn
         ws_conn.connect_future.add_done_callback(self._connect_callback)
+
+    def ping(self):
+        pass
 
     def send(self, data):
         """Send message to the server
