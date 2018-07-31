@@ -5,17 +5,17 @@ Padchat-python-SDK
 该项目为[Padchat](https://github.com/binsee/padchat-sdk)的python SDK，具体接口用法
 以 `Padchat` 接口文档为准。
 
-## 更新历史
-
-日期 | 内容
---- | ---
-2018.7.31 | 添加心跳事件，可在心跳事件中做其他操作。
-
 Padchat SDK版本
 * [padchat-sdk](https://github.com/binsee/padchat-sdk) - Padchat Node SDK，由
 `Padchat` 服务开发者提供
 * [padchat-php](https://github.com/fastgoo/padchat-php) - Padchat PHP SDK，由
 [fastgoo] 开发者提供
+
+## 更新历史
+
+日期 | 内容
+--- | ---
+2018.7.31 | 添加心跳事件，可在心跳事件中做其他操作。
 
 ### 运行环境
 * python3.5 (测试环境为3.6)
@@ -46,8 +46,8 @@ import padchat
 
 user = padchat.PadchatClient.select_user()
 
-client = padchat.PadchatClient(**{user or {}})
-client.connect('ws://52.80.34.207:7780')
+client = padchat.PadchatClient(**(user or {}))
+client.connect('ws://52.80.34.207:7777')
 client.run()
 ```
 
@@ -69,8 +69,8 @@ class CustomPadchatClient(padchat.PadchatClient):
     
 user = CustomPadchatClient.select_user()
 
-client = CustomPadchatClient(**{user or {}})
-client.connect('ws://52.80.34.207:7780')
+client = CustomPadchatClient(**(user or {}))
+client.connect('ws://52.80.34.207:7777')
 client.run()
 ```
 
@@ -86,8 +86,8 @@ class CustomPadchatClient(padchat.PadchatClient):
     
 user = CustomPadchatClient.select_user()
 
-client = CustomPadchatClient(**{user or {}}, ping_interval=30)
-client.connect('ws://52.80.34.207:7780')
+client = CustomPadchatClient(**(user or {}), ping_interval=30)
+client.connect('ws://52.80.34.207:7777')
 client.run()
 ```
 
