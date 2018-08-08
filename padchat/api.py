@@ -410,13 +410,15 @@ class PadChatAPIMixin:
         发送消息
         :param to_user_name: 接收者wx_id，可个人，可群组
         :param content: 发送内容
-        :param at_list: 艾特wx_id列表，服务器问题，暂停用
+        :param at_list: 艾特wx_id列表
         :return: 
         '''
         context = {
             'toUserName': to_user_name,
             'content': content,
         }
+        if at_list:
+            context.update({'atList': at_list})
         self.send('sendMsg', self.cmd_id, callback=callback, data=context)
 
     def send_app_msg(self, username: str, title: str, des: str, url: str,
