@@ -234,9 +234,6 @@ class BasePadchatClient(WebSocketClient):
 
     def save_user(self):
         if self.user:
-            if not self._wx_data:
-                self.get_wx_data()
-                return
             if not self._token:
                 self.get_login_token()
                 return

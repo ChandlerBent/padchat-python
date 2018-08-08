@@ -29,10 +29,13 @@ class PadChatCallbackMixin:
     def init_callback(self, data, last_payload):
         if data.get('success') is True:
             self._init = True
-            if self.user:
-                self.login(type=LoginType.token, token=self._token)
+            if not self._wx_data:
+                self.get_wx_data()
             else:
-                self.login(type=LoginType.qrcode)
+                if self.user:
+                    self.login(type=LoginType.token, token=self._token)
+                else:
+                    self.login(type=LoginType.qrcode)
             logger.info('初始化成功')
         else:
             logger.error('初始化失败')
@@ -46,8 +49,9 @@ class PadChatCallbackMixin:
                 self._wx_data = wx_data
                 logger.info('获取实例设备数据成功')
                 if self.user:
-                    # 如已登录，则把当前登录用户保存
-                    self.save_user()
+                    self.login(type=LoginType.token, token=self._token)
+                else:
+                    self.login(type=LoginType.qrcode)
 
     def login_callback(self, data, last_payload):
         if data.get('success') == True:
