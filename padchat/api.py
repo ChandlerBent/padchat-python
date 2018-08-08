@@ -66,16 +66,12 @@ class PadChatAPIMixin:
                 'token': token, 'wxData': self._wx_data
             })
         elif type == LoginType.phone:
-            if not token:
-                raise InvalidateValueError('token must not be none')
             if not phone:
                 raise InvalidateValueError('phone is not be none')
             data.update({
                 'phone': phone, 'wxData': self._wx_data
             })
         elif type == LoginType.user:
-            if not token:
-                raise InvalidateValueError('token must not be none')
             if not username:
                 raise InvalidateValueError('username is not be none')
             if not password:
