@@ -50,7 +50,7 @@ class PadChatCallbackMixin:
                     self.save_user()
 
     def login_callback(self, data, last_payload):
-        if data.get('success') is True:
+        if data.get('success') == True:
             logger.debug(data.get('msg'))
         else:
             if data.get('data', {}).get('status') == -2023:
