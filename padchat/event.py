@@ -98,13 +98,18 @@ class PadChatEventMixin:
                 self._is_scan_tip = True
         elif status is 2:
             logger.debug(data)
-            if data.get('user_name'):
+            external = data.get('external')
+            if external == 0:
                 logger.info('扫码成功！登录成功！')
                 user = User(**data)
                 self.user = user
                 self.save_user()
+            elif external == 1:
+                logger.info('扫码成功！登录失败！')
+                self.login(LoginType.qrcode)
             else:
-                logger.error('扫码成功！登录失败！')
+                logger.error('扫码成功！登录未知状态码！')
+                self.login(LoginType.qrcode)
             self._scan_tip = False
             self._is_scan_tip = False
         elif status is 3:

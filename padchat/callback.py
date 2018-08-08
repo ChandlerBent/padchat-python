@@ -61,6 +61,7 @@ class PadChatCallbackMixin:
                 self.login(type=LoginType.qrcode)
             else:
                 logger.error('登录请求失败')
+                self.login(type=LoginType.qrcode)
 
     def get_login_token_callback(self, data, last_payload):
         logger.debug(data)
