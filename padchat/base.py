@@ -45,7 +45,7 @@ class WebSocketClient:
 
         def periodic_ping(_self):
             super(PadchatSocketProtocol13, _self).periodic_ping()
-            self.ping()
+            self._ping()
         PadchatSocketProtocol13.periodic_ping = periodic_ping
 
     def run(self):
@@ -70,7 +70,7 @@ class WebSocketClient:
         self._ws_connection = ws_conn
         ws_conn.connect_future.add_done_callback(self._connect_callback)
 
-    def ping(self):
+    def _ping(self):
         pass
 
     def send(self, data):
@@ -158,6 +158,7 @@ class BasePadchatClient(WebSocketClient):
         self._init = False
         self._scan_tip = False
         self._is_scan_tip = False
+        self._alive = False
 
     @property
     def cmd_id(self):
@@ -190,6 +191,13 @@ class BasePadchatClient(WebSocketClient):
         logger.error('异常出错', exc_info=True)
         logger.info('重新连接Padchat服务器……')
         self._connect()
+
+    def _ping(self):
+        if self._alive:
+            self.ping()
+
+    def ping(self):
+        pass
 
     def cmd_msg_callback_route(self, msg):
         '''

@@ -57,6 +57,7 @@ class PadChatEventMixin:
         :return: 
         '''
         logger.info('微信账号登陆成功！')
+        self._alive = True
         self.get_login_token()
 
     def event_logout(self, data):
@@ -66,6 +67,7 @@ class PadChatEventMixin:
         :return: 
         '''
         logger.info('已注销登录')
+        self._alive = False
 
     def event_scan(self, data):
         '''
@@ -212,6 +214,7 @@ class PadChatEventMixin:
         '''
         logger.warning('实例已关闭')
         logger.info('重新连接服务器')
+        self._alive = False
         self._connect()
 
     def _is_group_msg(self, context):
