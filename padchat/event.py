@@ -21,6 +21,7 @@ class PadChatEventMixin:
             'logout': self.event_logout, # 注销登录
             'loaded': self.event_loaded, # 通讯录载入完毕
             'over': self.event_over, # 实例关闭
+            'warn': self.event_warn, # 异常消息
         }
         response_event = msg.get('event')
         event_callback = EVENT_MAP.get(response_event, None)
@@ -32,6 +33,17 @@ class PadChatEventMixin:
             event_callback(msg.get('data'))
 
     # event 函数 ###############################################################
+
+    def event_warn(self, data):
+        '''
+        异常事件
+        :param data: 
+        :return: 
+        '''
+        error = data.get('error', None)
+        if error == '接收推送信息异常！':
+            self.logout()
+            self.close()
 
     def event_qrcode(self, data):
         '''
