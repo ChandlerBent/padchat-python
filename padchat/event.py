@@ -223,8 +223,7 @@ class PadChatEventMixin:
         '''
         logger.warning('实例已关闭')
         self._alive = False
-        # logger.info('重新连接服务器')
-        # self._connect()
+        self.re_init_padchat()
 
     def _is_group_msg(self, context):
         from_user = context.get('from_user')

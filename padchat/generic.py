@@ -35,7 +35,6 @@ class PadchatClient(PadChatEventMixin, PadChatAPIMixin, PadchatPushMixin,
         else:
             result = yield self.login_padchat(LoginType.qrcode)
 
-        print(result)
         self._first_push_event = False
 
     @gen.coroutine
@@ -63,8 +62,8 @@ class PadchatClient(PadChatEventMixin, PadChatAPIMixin, PadchatPushMixin,
                 logger.error('尝试toten登录失败，尝试二维码方式登陆')
                 result = yield self.login_padchat(LoginType.qrcode)
             else:
-                logger.error('登录请求失败。重新建立实例。')
-                self.re_init_padchat()
+                logger.error('登录请求失败。将关闭实例后重新建立实例。')
+                self.close()
                 return
         return result
 
