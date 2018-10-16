@@ -6,6 +6,7 @@ from tornado import httpclient
 from tornado import httputil
 from tornado import ioloop
 from tornado import websocket
+from tornado.concurrent import Future
 
 import json
 
@@ -110,6 +111,7 @@ class WebSocketClient:
 
             # self._on_message(msg)
 
+    @gen.coroutine
     def __on_message(self, future):
         msg = future.result()
         if msg is not None:
@@ -168,7 +170,6 @@ class BasePadchatClient(WebSocketClient):
 
     def _on_connection_success(self):
         logger.info('连接Padchat服务器成功……')
-        self.init()
 
     def _on_message(self, raw_msg):
         msg = json.loads(raw_msg)
@@ -203,13 +204,21 @@ class BasePadchatClient(WebSocketClient):
         '''
         请求回应回调路由
         '''
-        raise NotImplementedError
+        type = msg.get('type')
+        cmd_id = msg.get('cmdId')
+        task_id = msg.get('taskId')
+        data = msg.get('data')
+
+        msg_task = self.pop_msg_queue(cmd_id)
+        _future = msg_task.get('future')
+        if _future:
+            _future.set_result(data)
 
     def event_msg_route(self, msg):
         raise NotImplementedError
 
-    def send(self, cmd, cmd_id, type='user', authkey=None, callback=None,
-             data=None):
+    @gen.coroutine
+    def send(self, cmd: str, cmd_id, type='user', authkey=None, data=None):
         '''
         发送指令
         '''
@@ -224,9 +233,12 @@ class BasePadchatClient(WebSocketClient):
 
         content = json.dumps(payload, ensure_ascii=False)
 
-        logger.debug(content)
-        self.store_msg_queue(cmd_id, callback, data)
+        logger.info(content)
+        future = Future()
+        self.store_msg_queue(cmd_id, data, future)
         super().send(content)
+        result = yield future
+        return result
 
     def pop_msg_queue(self, cmd_id):
         '''
@@ -234,17 +246,14 @@ class BasePadchatClient(WebSocketClient):
         '''
         return self._msg_queue.pop(cmd_id)
 
-    def store_msg_queue(self, cmd_id, callback, payload=None):
+    def store_msg_queue(self, cmd_id, payload=None, future=None):
         '''
         存储cmd id对应的回调数据
         '''
-        self._msg_queue[cmd_id] = {'callback': callback, 'payload': payload}
+        self._msg_queue[cmd_id] = {'payload': payload, 'future': future}
 
     def save_user(self):
         if self.user:
-            if not self._token:
-                self.get_login_token()
-                return
             user_profile = UserProfile()
             user_profile.save(self.user, self._wx_data, self._token)
 

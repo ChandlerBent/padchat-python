@@ -39,6 +39,22 @@ class PadchatPushMixin:
         '''
         pass
 
+    def image_msg(self, context):
+        '''
+        图片信息
+        :param context: 
+        :return: 
+        '''
+        pass
+
+    def voice_msg(self, context):
+        '''
+        语音信息
+        :param context: 
+        :return: 
+        '''
+        pass
+
     def app_msg(self, context):
         '''
         应用消息信息
