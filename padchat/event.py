@@ -21,6 +21,7 @@ class PadChatEventMixin:
             'logout': self.event_logout, # 注销登录
             'loaded': self.event_loaded, # 通讯录载入完毕
             'over': self.event_over, # 实例关闭
+            'warn': self.event_warn, # 异常消息
         }
         response_event = msg.get('event')
         event_callback = EVENT_MAP.get(response_event, None)
@@ -32,6 +33,17 @@ class PadChatEventMixin:
             event_callback(msg.get('data'))
 
     # event 函数 ###############################################################
+
+    def event_warn(self, data):
+        '''
+        异常事件
+        :param data: 
+        :return: 
+        '''
+        error = data.get('error', None)
+        if error == '接收推送信息异常！':
+            self.logout()
+            self.close()
 
     def event_qrcode(self, data):
         '''
@@ -58,7 +70,7 @@ class PadChatEventMixin:
         '''
         logger.info('微信账号登陆成功！')
         self._alive = True
-        self.get_login_token()
+        self.save_user_padchat()
 
     def event_logout(self, data):
         '''
@@ -103,15 +115,15 @@ class PadChatEventMixin:
             sub_status = data.get('sub_status')
             if sub_status == 0:
                 logger.info('扫码成功！登录成功！')
-                user = User(**data)
-                self.user = user
-                self.save_user()
+                # user = User(**data)
+                # self.user = user
+                # self.save_user()
             elif sub_status == 1:
                 logger.info('扫码成功！登录失败！')
-                self.login(LoginType.qrcode)
+                self.re_init_padchat()
             else:
                 logger.error('扫码成功！登录未知状态码！')
-                self.login(LoginType.qrcode)
+                self.re_init_padchat()
             self._scan_tip = False
             self._is_scan_tip = False
         elif status is 3:
@@ -119,12 +131,12 @@ class PadChatEventMixin:
             self._scan_tip = False
             self._is_scan_tip = False
             logger.info('将重新获取登录二维码')
-            self.login(LoginType.qrcode)
+            self.login_padchat(LoginType.qrcode)
         elif status is 4:
             logger.info('手机端已取消登录')
             self._scan_tip = False
             self._is_scan_tip = False
-            self.login(LoginType.qrcode)
+            self.login_padchat(LoginType.qrcode)
 
     def event_push(self, data: dict):
         '''
@@ -145,9 +157,10 @@ class PadChatEventMixin:
             elif sub_type == 2:
                 logger.debug('好友信息推送，包含好友，群，公众号信息')
             elif sub_type == 3:
-                logger.debug('图片消息')
+                self.image_msg(push)
             elif sub_type == 34:
                 logger.debug('语音消息')
+                self.voice_msg(push)
             elif sub_type == 37:
                 self.friend_invite_msg(push)
             elif sub_type == 42:
@@ -183,10 +196,6 @@ class PadChatEventMixin:
                 logger.debug('语音通话')
             elif sub_type == 62:
                 logger.debug('小视频')
-            elif sub_type == 2000:
-                logger.debug('转账消息')
-            elif sub_type == 2001:
-                logger.debug('红包消息')
             elif sub_type == 3000:
                 logger.debug('群邀请')
             elif sub_type == 9999:
@@ -213,9 +222,8 @@ class PadChatEventMixin:
         :return: 
         '''
         logger.warning('实例已关闭')
-        logger.info('重新连接服务器')
         self._alive = False
-        self._connect()
+        self.re_init_padchat()
 
     def _is_group_msg(self, context):
         from_user = context.get('from_user')

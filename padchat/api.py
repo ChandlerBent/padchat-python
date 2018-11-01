@@ -5,29 +5,36 @@ import base64
 import io
 from typing import Union
 
+from tornado import gen
+
 from .constant import LoginType
 from .exceptions import UnknowLoginType, InvalidateValueError, InstanceNotInit
 from .utils import send_app_msg_xml_template
+from .logger import logger
 
 
 class PadChatAPIMixin:
     # cmd 命令 #################################################################
 
-    def init(self, callback='init_callback'):
+    @gen.coroutine
+    def init(self):
         '''
         初始化机器人
         '''
-        self.send('init', self.cmd_id, callback=callback)
+        result = yield self.send('init', self.cmd_id)
+        return result
 
-    def get_wx_data(self, callback='get_wx_data_callback'):
+    @gen.coroutine
+    def get_wx_data(self):
         '''
         获取设备实例数据
         '''
-        self.send('getWxData', self.cmd_id, callback=callback)
+        result = yield self.send('getWxData', self.cmd_id)
+        return result
 
+    @gen.coroutine
     def login(self, type, token=None, phone=None,
-              code=None, username=None, password=None,
-              callback='login_callback'):
+              code=None, username=None, password=None):
         '''
         登录函数
         :param type: 登录类型
@@ -41,7 +48,6 @@ class PadChatAPIMixin:
         :param code: 当type 为code时，必填项。手机验证码
         :param username: 当type 为user时，为必填项。用户名/qq号/手机号
         :param password: 为type 为user时，为必填项。登录密码
-        :param callback: 回调函数，尽量不修改
         :return: 
         
         eg. 扫码登陆
@@ -55,9 +61,11 @@ class PadChatAPIMixin:
         type = getattr(LoginType, type, LoginType.unknow)
         if type == LoginType.unknow:
             raise UnknowLoginType('未知登录类型')
+
         data = {
             'loginType': type,
         }
+
         if type in (LoginType.token, LoginType.request):
             if not token:
                 raise InvalidateValueError('token must not be none')
@@ -65,12 +73,14 @@ class PadChatAPIMixin:
             data.update({
                 'token': token, 'wxData': self._wx_data
             })
+
         elif type == LoginType.phone:
             if not phone:
                 raise InvalidateValueError('phone is not be none')
             data.update({
                 'phone': phone, 'wxData': self._wx_data
             })
+
         elif type == LoginType.user:
             if not username:
                 raise InvalidateValueError('username is not be none')
@@ -81,85 +91,93 @@ class PadChatAPIMixin:
                 'password': password,
                 'wxData': self._wx_data
             })
+
         elif type == LoginType.qrcode:
             if self._wx_data:
                 data.update({
                     'wxData': self._wx_data
                 })
-        self.send('login', cmd_id=self.cmd_id, callback=callback, data=data)
 
-    def get_login_token(self, callback='get_login_token_callback'):
+        result = yield self.send('login', cmd_id=self.cmd_id, data=data)
+        return result
+
+    @gen.coroutine
+    def get_login_token(self):
         '''
         获取登录token
-        :param callback: 
         :return: 
         '''
-        self.send('getLoginToken', self.cmd_id, callback=callback)
+        result = yield self.send('getLoginToken', self.cmd_id)
+        return result
 
-    def logout(self, callback='logout_callback'):
+    @gen.coroutine
+    def logout(self):
         '''
         注销
-        :param callback: 
         :return: 
         '''
-        self.send('logout', self.cmd_id, callback=callback)
+        result = yield self.send('logout', self.cmd_id)
+        logger.info('微信账号已注销退出成功')
 
-    def close(self, callback='close_callback'):
+    @gen.coroutine
+    def close(self):
         '''
         关闭机器人实例（非退出微信）
-        :param callback: 
         :return: 
         '''
-        self.send('close', self.cmd_id, callback=callback)
+        result = yield self.send('close', self.cmd_id)
+        logger.info('退出机器人实例')
 
     # 用户管理 接口 #############################################################
-    def get_contact(self, username: str, callback='get_contact_callback'):
+    @gen.coroutine
+    def get_contact(self, username: str):
         '''
         获取用户资料
         :param username: 对方wxid
-        :param callback: 
         :return: 
         '''
         data = {
             'userId': username
         }
-        self.send('getContact', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('getContact', self.cmd_id, data=data)
+        return result
 
-    def search_contact(self, username: str, callback='search_contact_callback'):
+    @gen.coroutine
+    def search_contact(self, username: str):
         '''
         搜索用户资料
         :param username: 对方wxid
-        :param callback: 
         :return: 
         '''
         data = {
             'userId': username
         }
-        self.send('searchContact', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('searchContact', self.cmd_id, data=data)
+        return result
 
-    def accept_user(self, stranger: str, ticket: str, callback='accept_user_callback'):
+    @gen.coroutine
+    def accept_user(self, stranger: str, ticket: str):
         '''
         通过好友请求
         :param stranger: 用户stranger数据
         :param ticket: 用户ticket数据
-        :param callback: 
         :return: 
         '''
         data = {
             'stranger': stranger,
             'ticket': ticket,
         }
-        self.send('acceptUser', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('acceptUser', self.cmd_id, data=data)
+        return result
 
-    def add_contact(self, stranger: str, ticket: str, type=3, content="",
-                    callback='add_contact_callback'):
+    @gen.coroutine
+    def add_contact(self, stranger: str, ticket: str, type=3, content=""):
         '''
         主动添加好友
         :param stranger: 用户stranger数据
         :param ticket: 用户ticket数据
         :param type: int 添加好友途径
         :param content: 验证信息
-        :param callback: 
         :return: 
         '''
         data = {
@@ -168,16 +186,16 @@ class PadChatAPIMixin:
             'type': type,
             'content': content,
         }
-        self.send('addContact', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('addContact', self.cmd_id, data=data)
+        return result
 
-    def say_hello(self, stranger: str, ticket: str, content: str,
-                  callback='say_hello_callback'):
+    @gen.coroutine
+    def say_hello(self, stranger: str, ticket: str, content: str):
         '''
         打招呼
         :param stranger: 用户stranger数据
         :param ticket: 用户ticket数据
         :param content: 找招呼内容
-        :param callback: 
         :return: 
         '''
         data = {
@@ -185,37 +203,39 @@ class PadChatAPIMixin:
             'ticket': ticket,
             'content': content,
         }
-        self.send('sayHello', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('sayHello', self.cmd_id, data=data)
+        return result
 
-    def delete_contact(self, username: str, callback='delete_contact_callback'):
+    @gen.coroutine
+    def delete_contact(self, username: str):
         '''
         删除好友
         :param username: 用户wxid
-        :param callback: 
         :return: 
         '''
         data = {
             'userId': username
         }
-        self.send('deleteContact', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('deleteContact', self.cmd_id, data=data)
+        return result
 
-    def set_remark(self, username: str, remark: str,
-                   callback='set_remark_callback'):
+    @gen.coroutine
+    def set_remark(self, username: str, remark: str):
         '''
         设置好友备注
         :param username: 用户wxid
         :param remark: 备注内容
-        :param callback: 
         :return: 
         '''
         data = {
             'userId': username,
             'remark': remark
         }
-        self.send('setRemark', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('setRemark', self.cmd_id, data=data)
+        return result
 
-    def set_head_img(self, file: Union[io.FileIO, str],
-                     callback='set_head_img_callback'):
+    @gen.coroutine
+    def set_head_img(self, file: Union[io.FileIO, str]):
         '''
         设置头像
         :param file: 二进制文件或base64字符串
@@ -227,181 +247,187 @@ class PadChatAPIMixin:
         data = {
             'file': file,
         }
-        self.send('setHeadImg', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('setHeadImg', self.cmd_id, data=data)
+        return result
 
-    def sync_msg(self, callback='sync_msg_callback'):
+    @gen.coroutine
+    def sync_msg(self):
         '''
         主动同步消息
-        :param callback: 
         :return: 
         '''
-        self.send('syncMsg', self.cmd_id, callback=callback)
+        result = yield self.send('syncMsg', self.cmd_id)
+        return result
 
-    def sync_contact(self, reset=False, callback='sync_contact_callback'):
+    @gen.coroutine
+    def sync_contact(self, reset=False):
         '''
         同步通讯录
         :param reset: 若设置为true，会重置同步状态
-        :param callback: 
         :return: 
         '''
         data = {
             'reset': bool(reset)
         }
-        self.send('syncContact', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('syncContact', self.cmd_id, data=data)
+        return result
 
-    def get_user_qrcode(self, username=None, style=0,
-                           callback='get_user_qrcode_callback'):
+    @gen.coroutine
+    def get_user_qrcode(self, username=None, style=0):
         '''
         获取个人二维码(仅限自己)
         :param username: 用户wxid
         :param stype: int 二维码风格0-3
-        :param callback: 
         :return: 
         '''
         data = {
             'userId': username or self.user.wx_id,
             'style': style,
         }
-        self.send('getUserQrcode', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('getUserQrcode', self.cmd_id, data=data)
+        return result
 
-    def get_my_info(self, callback='get_my_info_callback'):
+    @gen.coroutine
+    def get_my_info(self):
         '''
         获取个人资料
-        :param callback: 
         :return: 
         '''
-        self.send('getMyInfo', self.cmd_id, callback=callback)
+        result = yield self.send('getMyInfo', self.cmd_id)
+        return result
 
     # 群管理 接口 ###############################################################
-    def create_room(self, user_list: list, callback='create_room_callback'):
+    @gen.coroutine
+    def create_room(self, user_list: list):
         '''
         创建群
         备注：必须多于2个人（含2个），才会建群成功
         :param user_list: 用户wxid列表
-        :param callback: 
         :return: 
         '''
         data = {
             'userList': user_list
         }
-        self.send('createRoom', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('createRoom', self.cmd_id, data=data)
+        return result
 
-    def get_room_members(self, group_id: str, callback='get_room_members_callback'):
+    @gen.coroutine
+    def get_room_members(self, group_id: str):
         '''
         获取群成员
         :param group_id: 群id
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id
         }
-        self.send('getRoomMembers', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('getRoomMembers', self.cmd_id, data=data)
+        return result
 
-    def add_room_member(self, group_id: str, username: str,
-                        callback='add_room_member_callback'):
+    @gen.coroutine
+    def add_room_member(self, group_id: str, username: str):
         '''
         添加群成员
         :param group_id: 群id
         :param username: 用户wxid
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id,
             'userId': username,
         }
-        self.send('addRoomMember', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('addRoomMember', self.cmd_id, data=data)
+        return result
 
-    def invite_room_member(self, group_id: str, username: str,
-                         callback='invite_room_member_callback'):
+    @gen.coroutine
+    def invite_room_member(self, group_id: str, username: str):
         '''
         邀请群成员
         :param group_id: 群id
         :param username: 用户wxid
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id,
             'userId': username,
         }
-        self.send('inviteRoomMember', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('inviteRoomMember', self.cmd_id, data=data)
+        return  result
 
-    def delete_room_member(self, group_id: str, username: str,
-                         callback='delete_room_member_callback'):
+    @gen.coroutine
+    def delete_room_member(self, group_id: str, username: str):
         '''
         删除群成员
         :param group_id: 群id
         :param username: 用户wxid
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id,
             'userId': username,
         }
-        self.send('deleteRoomMember', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('deleteRoomMember', self.cmd_id, data=data)
+        return result
 
-    def quit_room(self, group_id: str, callback='quit_room_callback'):
+    @gen.coroutine
+    def quit_room(self, group_id: str):
         '''
         退群
         :param group_id: 群id
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id
         }
-        self.send('quitRoom', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('quitRoom', self.cmd_id, data=data)
+        return result
 
-    def set_room_announcement(self, group_id: str, content: str,
-                            callback='set_room_announcement_callback'):
+    @gen.coroutine
+    def set_room_announcement(self, group_id: str, content: str):
         '''
         设置群公告
         :param group_id: 群id
         :param content: 公告内容
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id,
             'content': content
         }
-        self.send('setRoomAnnouncement', self.cmd_id, callback=callback,
-                  data=data)
+        result = yield self.send('setRoomAnnouncement', self.cmd_id, data=data)
+        return result
 
-    def set_room_name(self, group_id: str, content: str,
-                    callback='set_room_name_callback'):
+    @gen.coroutine
+    def set_room_name(self, group_id: str, content: str):
         '''
         设置群名称
         :param groupd_id: 群id
         :param content: 群名称
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id,
             'content': content
         }
-        self.send('setRoomName', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('setRoomName', self.cmd_id, data=data)
+        return result
 
-    def get_room_qrcode(self, group_id: str,
-                        callback='get_room_qrcode_callback'):
+    @gen.coroutine
+    def get_room_qrcode(self, group_id: str):
         '''
         获取群二维码
         :param group_id: 群id
-        :param callback: 
         :return: 
         '''
         data = {
             'groupId': group_id
         }
-        self.send('getRoomQrcode', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('getRoomQrcode', self.cmd_id, data=data)
+        return result
 
     # 消息 接口 #################################################################
-    def send_msg(self, to_user_name: str, content: str, at_list: list=None,
-                 callback='send_msg_callback'):
+    @gen.coroutine
+    def send_msg(self, to_user_name: str, content: str, at_list: list=None):
         '''
         发送消息
         :param to_user_name: 接收者wx_id，可个人，可群组
@@ -415,11 +441,12 @@ class PadChatAPIMixin:
         }
         if at_list:
             context.update({'atList': at_list})
-        self.send('sendMsg', self.cmd_id, callback=callback, data=context)
+        result = yield self.send('sendMsg', self.cmd_id, data=context)
+        return result
 
+    @gen.coroutine
     def send_app_msg(self, username: str, title: str, des: str, url: str,
-                   thumburl: str, appid=None, sdkver=None,
-                   callback='send_app_msg_callback'):
+                   thumburl: str, appid=None, sdkver=None):
         '''
         发送App消息
         :param username: 接收者wxid
@@ -429,7 +456,6 @@ class PadChatAPIMixin:
         :param thumburl: 缩略图url
         :param appid: appid，可忽略
         :param sdkver: sdk版本，可忽略
-        :param callback: 
         :return: 
         '''
         context = {
@@ -444,15 +470,15 @@ class PadChatAPIMixin:
             'toUserName': username,
             'content': send_app_msg_xml_template(context),
         }
-        self.send('sendAppMsg', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('sendAppMsg', self.cmd_id, data=data)
+        return result
 
-    def send_image(self, username: str, file: Union[io.FileIO, str],
-                  callback='send_image_callback'):
+    @gen.coroutine
+    def send_image(self, username: str, file: Union[io.FileIO, str]):
         '''
         发送图片
         :param username: 接收者wxid
         :param file: 二进制文件或base64字符串
-        :param callback: 
         :return: 
         '''
         if hasattr(file, 'read'):
@@ -461,10 +487,11 @@ class PadChatAPIMixin:
             'toUserName': username,
             'file': file
         }
-        self.send('sendImage', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('sendImage', self.cmd_id, data=data)
+        return result
 
-    def send_voice(self, username: str, file: Union[io.FileIO, str], time: int,
-                   callback='send_voice_callback'):
+    @gen.coroutine
+    def send_voice(self, username: str, file: Union[io.FileIO, str], time: int):
         '''
         发送语音
         :param username: 接收者id
@@ -480,16 +507,16 @@ class PadChatAPIMixin:
             'file': file,
             'time': time,
         }
-        self.send('sendVoice', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('sendVoice', self.cmd_id, data=data)
+        return result
 
-    def share_card(self, username: str, content: str, user_id: str,
-                  callback='share_card_callback'):
+    @gen.coroutine
+    def share_card(self, username: str, content: str, user_id: str):
         '''
         分享名片
         :param username: 接收者id
         :param content: 分享内容
         :param user_id: 被分享者id
-        :param callback: 
         :return: 
         '''
         data = {
@@ -497,57 +524,93 @@ class PadChatAPIMixin:
             'content': content,
             'userId': user_id
         }
-        self.send('shareCard', self.cmd_id, callback=callback, data=data)
+        result = yield self.send('shareCard', self.cmd_id, data=data)
+        return result
 
+    # 获取图片、文件接口 #########################################################
+    @gen.coroutine
+    def get_msg_image(self, raw_data):
+        '''
+        获取图片
+        :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
+        :return: 
+        '''
+        if 'rawMsgData' not in raw_data:
+            raw_data = {'rawMsgData': raw_data}
+        result = yield self.send('getMsgImage', self.cmd_id, data=raw_data)
+        return result
+
+    @gen.coroutine
+    def get_msg_video(self, raw_data):
+        '''
+        获取视频
+        :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
+        :return: 
+        '''
+        if 'rawMsgData' not in raw_data:
+            raw_data = {'rawMsgData': raw_data}
+        result = yield self.send('getMsgVideo', self.cmd_id, data=raw_data)
+        return result
+
+    @gen.coroutine
+    def get_msg_voice(self, raw_data):
+        '''
+        获取音频
+        :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
+        :return: 
+        '''
+        if 'rawMsgData' not in raw_data:
+            raw_data = {'rawMsgData': raw_data}
+        result = yield self.send('getMsgVoice', self.cmd_id, data=raw_data)
+        return result
 
     # 转账 接口 #################################################################
-    def query_transfer(self, raw_data, callback='query_transfer_callback'):
+    @gen.coroutine
+    def query_transfer(self, raw_data):
         '''
         查看转账消息
         :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
-        :param callback: 
         :return: 
         '''
         if 'rawMsgData' not in raw_data:
             raw_data = {'rawMsgData': raw_data}
-        self.send('queryTransfer', self.cmd_id, callback=callback,
-                  data=raw_data)
+        result = yield self.send('queryTransfer', self.cmd_id, data=raw_data)
+        return result
 
-    def accept_transfer(self, raw_data, callback='accept_transfer_callback'):
+    @gen.coroutine
+    def accept_transfer(self, raw_data):
         '''
         接受转账
         :param raw_data: 拿到的push msg消息，就是raw_data，不用做任何处理
-        :param callback: 
         :return: 
         '''
         if 'rawMsgData' not in raw_data:
             raw_data = {'rawMsgData': raw_data}
-        self.send('acceptTransfer', self.cmd_id, callback=callback,
-                  data=raw_data)
+        result = yield self.send('acceptTransfer', self.cmd_id, data=raw_data)
+        return result
 
     # 红包 接口 #################################################################
-
-    def receive_red_packet(self, raw_data, callback='receive_red_packet_callback'):
+    @gen.coroutine
+    def receive_red_packet(self, raw_data):
         '''
         接收红包
         该接口并未正式领取红包，但领取红包前必须调用该函数，然后在该指令的回调函数中，或稍后
         再发送领取红包指令。
         领取红包以及查看红包信息，都必须先调用该函数，否则会执行失败
         :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
-        :param callback: 
         :return: 
         '''
         if 'rawMsgData' not in raw_data:
             raw_data = {'rawMsgData': raw_data}
-        self.send('receiveRedPacket', self.cmd_id, callback=callback,
-                  data=raw_data)
+        result = yield self.send('receiveRedPacket', self.cmd_id, data=raw_data)
+        return result
 
-    def open_red_packet(self, raw_data, key, callback='open_red_packet_callback'):
+    @gen.coroutine
+    def open_red_packet(self, raw_data, key):
         '''
         领取红包
         :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
         :param key: 从接收红包接口中获取
-        :param callback: 
         :return: 
         '''
         if 'rawMsgData' not in raw_data:
@@ -555,19 +618,19 @@ class PadChatAPIMixin:
                 'rawMsgData': raw_data,
             }
         raw_data.update({'key': key})
-        self.send('openRedPacket', self.cmd_id, callback=callback,
-                  data=raw_data)
+        result = yield self.send('openRedPacket', self.cmd_id, data=raw_data)
+        return result
 
-    def query_red_packet(self, raw_data, key, callback='query_red_packet_callback'):
+    @gen.coroutine
+    def query_red_packet(self, raw_data, key):
         '''
         查看红包信息
         :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
         :param key: 从接收红包接口中获取
-        :param callback: 
         :return: 
         '''
         if 'rawMsgData' not in raw_data:
             raw_data = {'rawMsgData': raw_data}
-        self.send('queryRedPacket', self.cmd_id, callback=callback,
-                  data=raw_data)
+        result = yield self.send('queryRedPacket', self.cmd_id, data=raw_data)
+        return result
 

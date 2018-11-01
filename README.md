@@ -15,6 +15,7 @@ Padchat SDK版本
 
 日期 | 内容
 --- | ---
+2018.10.16 | 添加图片、视频、语音下载接口。更改异步结构。
 2018.8.9 | 修复未登陆情况触发ping事件
 2018.8.8 | 支持sendMsg `atList` 参数。
 2018.7.31 | 添加心跳事件，可在心跳事件中做其他操作。
@@ -32,7 +33,7 @@ Padchat SDK版本
 用户管理 | √ | √
 群管理 | √ | √
 发送消息 | √ | √
-获取图片、文件 | X | X
+获取图片、文件 | √ | √
 朋友圈操作 | X | X
 收藏操作 | X | X
 标签管理 | X | X
@@ -41,7 +42,7 @@ Padchat SDK版本
 
 ### 使用方法
 
-#### 最基本使用，只需要4行
+#### 最基本使用，只需要5行
 
 ```python
 import padchat
@@ -53,17 +54,22 @@ client.connect('ws://52.80.34.207:7777')
 client.run()
 ```
 
-#### 文字消息推送
+#### 文字消息异步推送
 
 ```python
 import padchat
+from tornado import gen
 
 class CustomPadchatClient(padchat.PadchatClient):
+    @gen.coroutine
     def person_text_msg(self, context):
         # 个人消息接口
-        # dosomthing
-        pass
+        from_user = context.get('from_user')
+        result = yield self.send_msg(from_user, '发送一条消息')
+        if result.get('success') is True:
+            print('发送成功')
         
+    @gen.coroutine
     def group_text_msg(self, context):
         # 群组消息接口
         # dosomething
@@ -74,6 +80,21 @@ user = CustomPadchatClient.select_user()
 client = CustomPadchatClient(**(user or {}))
 client.connect('ws://52.80.34.207:7777')
 client.run()
+```
+
+#### 领取红包
+```python
+import padchat
+from tornado import gen
+
+class CustomPadchatClient(padchat.PadchatClient):
+    @gen.coroutine
+    def red_packet_msg(self, context):
+        result = yield self.receive_red_packet(context)
+        key = result.get('data', {}).get('key')
+        result = yield self.open_red_packet(context, key)
+        if result.get('success') is True:
+            print('领取红包成功')
 ```
 
 #### 心跳事件
