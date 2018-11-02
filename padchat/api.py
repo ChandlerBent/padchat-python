@@ -66,7 +66,7 @@ class PadChatAPIMixin:
             'loginType': type,
         }
 
-        if type in (LoginType.token, LoginType.request):
+        if type in (LoginType.auto, LoginType.request):
             if not token:
                 raise InvalidateValueError('token must not be none')
             assert self._wx_data is not None, 'wx data must not be none'
@@ -108,6 +108,8 @@ class PadChatAPIMixin:
         :return: 
         '''
         result = yield self.send('getLoginToken', self.cmd_id)
+        token = result['data'].get('token')
+        self._token = token
         return result
 
     @gen.coroutine
@@ -572,6 +574,7 @@ class PadChatAPIMixin:
         :param raw_data: 拿到的push数据，就是raw_data，不用做任何处理
         :return: 
         '''
+        raise DeprecationWarning('this method has deprecation')
         if 'rawMsgData' not in raw_data:
             raw_data = {'rawMsgData': raw_data}
         result = yield self.send('queryTransfer', self.cmd_id, data=raw_data)
@@ -584,6 +587,7 @@ class PadChatAPIMixin:
         :param raw_data: 拿到的push msg消息，就是raw_data，不用做任何处理
         :return: 
         '''
+        raise DeprecationWarning('this method has deprecation')
         if 'rawMsgData' not in raw_data:
             raw_data = {'rawMsgData': raw_data}
         result = yield self.send('acceptTransfer', self.cmd_id, data=raw_data)
