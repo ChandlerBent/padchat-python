@@ -31,7 +31,7 @@ class PadchatClient(PadChatEventMixin, PadChatAPIMixin, PadchatPushMixin,
             yield self.wx_data_padchat()
 
         if self.user:
-            result = yield self.login_padchat(LoginType.token, token=self._token)
+            result = yield self.login_padchat(LoginType.auto, token=self._token)
         else:
             result = yield self.login_padchat(LoginType.qrcode)
 
@@ -69,6 +69,7 @@ class PadchatClient(PadChatEventMixin, PadChatAPIMixin, PadchatPushMixin,
 
     @gen.coroutine
     def save_user_padchat(self):
+        result = yield self.sync_contact()
         result = yield self.get_login_token()
         token = result['data'].get('token')
         if token:
@@ -89,8 +90,3 @@ class PadchatClient(PadChatEventMixin, PadChatAPIMixin, PadchatPushMixin,
             ioloop.IOLoop.instance().start()
         except KeyboardInterrupt:
             self.close()
-
-    def event_login(self, data):
-        super().event_login(data)
-        # 避免重复拉取旧消息
-        self.sync_msg()

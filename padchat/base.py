@@ -207,12 +207,12 @@ class BasePadchatClient(WebSocketClient):
         type = msg.get('type')
         cmd_id = msg.get('cmdId')
         task_id = msg.get('taskId')
-        data = msg.get('data')
+        payload = msg.get('payload')
 
         msg_task = self.pop_msg_queue(cmd_id)
         _future = msg_task.get('future')
         if _future:
-            _future.set_result(data)
+            _future.set_result(payload)
 
     def event_msg_route(self, msg):
         raise NotImplementedError
@@ -229,7 +229,7 @@ class BasePadchatClient(WebSocketClient):
         if cmd_id:
             payload['cmdId'] = cmd_id
         if data:
-            payload['data'] = data
+            payload['payload'] = data
 
         content = json.dumps(payload, ensure_ascii=False)
 

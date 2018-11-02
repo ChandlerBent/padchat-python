@@ -14,14 +14,17 @@ from .logger import logger
 class PadChatEventMixin:
     def event_msg_route(self, msg):
         EVENT_MAP = {
-            'qrcode': self.event_qrcode, # 二维码
-            'scan': self.event_scan, # 扫码
-            'push': self.event_push, # 新消息
-            'login': self.event_login, # 登录
-            'logout': self.event_logout, # 注销登录
-            'loaded': self.event_loaded, # 通讯录载入完毕
-            'over': self.event_over, # 实例关闭
-            'warn': self.event_warn, # 异常消息
+            'qrcode': self.event_qrcode,    # 二维码
+            'scan': self.event_scan,        # 扫码
+            'push': self.event_push,        # 新消息
+            'login': self.event_login,      # 登录
+            'logout': self.event_logout,    # 注销登录
+            'loaded': self.event_loaded,    # 通讯录载入完毕
+            'over': self.event_over,        # 实例关闭
+            'warn': self.event_warn,        # 异常消息
+            'contact': self.event_contact,  # 联系人
+            'sns': self.event_sns,          # 朋友圈
+            'notify': self.event_notify,    # 推送通知
         }
         response_event = msg.get('event')
         event_callback = EVENT_MAP.get(response_event, None)
@@ -30,7 +33,7 @@ class PadChatEventMixin:
                 response_event=response_event, msg=msg
             ))
         else:
-            event_callback(msg.get('data'))
+            event_callback(msg.get('payload'))
 
     # event 函数 ###############################################################
 
@@ -224,6 +227,35 @@ class PadChatEventMixin:
         logger.warning('实例已关闭')
         self._alive = False
         self.re_init_padchat()
+
+    def event_contact(self, data):
+        '''
+        联系人事件
+        :param data: 
+        :return: 
+        '''
+        pass
+
+    def event_sns(self, data):
+        '''
+        朋友圈事件
+        :param data: 
+        :return: 
+        '''
+        pass
+
+    def event_notify(self, data):
+        '''
+        推送通知
+        :param data: 
+        :return: 
+        '''
+        if data.get('type') == 4:
+            self.sync_contact()
+        else:
+            self.sync_msg()
+
+
 
     def _is_group_msg(self, context):
         from_user = context.get('from_user')

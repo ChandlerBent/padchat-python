@@ -82,21 +82,6 @@ client.connect('ws://52.80.34.207:7777')
 client.run()
 ```
 
-#### 领取红包
-```python
-import padchat
-from tornado import gen
-
-class CustomPadchatClient(padchat.PadchatClient):
-    @gen.coroutine
-    def red_packet_msg(self, context):
-        result = yield self.receive_red_packet(context)
-        key = result.get('data', {}).get('key')
-        result = yield self.open_red_packet(context, key)
-        if result.get('success') is True:
-            print('领取红包成功')
-```
-
 #### 心跳事件
 
 ```python

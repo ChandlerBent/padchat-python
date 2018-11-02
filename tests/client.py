@@ -8,7 +8,7 @@ from padchat import PadchatClient
 
 class TestClient(PadchatClient):
     @gen.coroutine
-    def person_text_msg(self, context):
+    def self_text_msg(self, context):
         content = context.get('content')
         from_user = context.get('from_user')
         if content == '个人资料':
@@ -65,14 +65,6 @@ class TestClient(PadchatClient):
             result = yield self.share_card(group_id, '测试分享', from_user)
 
     @gen.coroutine
-    def red_packet_msg(self, context):
-        result = yield self.receive_red_packet(context)
-        key = result.get('data', {}).get('key')
-        result = yield self.open_red_packet(context, key)
-        if result.get('success') is True:
-            print('领取红包成功')
-
-    @gen.coroutine
     def image_msg(self, context):
         result = yield self.get_msg_image(context)
 
@@ -81,5 +73,5 @@ if __name__ == '__main__':
     user = TestClient.select_user()
 
     client = TestClient(**(user or {}))
-    client.connect('ws://padchat-sdk.botorange.com:8988/')
+    client.connect('ws://padchat-sdk.botorange.com:8989/')
     client.run()
