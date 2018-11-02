@@ -73,7 +73,6 @@ class PadChatEventMixin:
         '''
         logger.info('微信账号登陆成功！')
         self._alive = True
-        self.save_user_padchat()
 
     def event_logout(self, data):
         '''
@@ -118,9 +117,6 @@ class PadChatEventMixin:
             sub_status = data.get('sub_status')
             if sub_status == 0:
                 logger.info('扫码成功！登录成功！')
-                # user = User(**data)
-                # self.user = user
-                # self.save_user()
             elif sub_status == 1:
                 logger.info('扫码成功！登录失败！')
                 self.re_init_padchat()
@@ -226,7 +222,6 @@ class PadChatEventMixin:
         '''
         logger.warning('实例已关闭')
         self._alive = False
-        self.re_init_padchat()
 
     def event_contact(self, data):
         '''
@@ -254,7 +249,6 @@ class PadChatEventMixin:
             self.sync_contact()
         else:
             self.sync_msg()
-
 
 
     def _is_group_msg(self, context):

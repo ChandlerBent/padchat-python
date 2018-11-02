@@ -108,6 +108,8 @@ class PadChatAPIMixin:
         :return: 
         '''
         result = yield self.send('getLoginToken', self.cmd_id)
+        token = result['data'].get('token')
+        self._token = token
         return result
 
     @gen.coroutine

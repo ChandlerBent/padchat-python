@@ -230,6 +230,8 @@ class BasePadchatClient(WebSocketClient):
             payload['cmdId'] = cmd_id
         if data:
             payload['payload'] = data
+        else:
+            payload['payload'] = {}
 
         content = json.dumps(payload, ensure_ascii=False)
 
