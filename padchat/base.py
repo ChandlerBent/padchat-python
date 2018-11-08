@@ -258,6 +258,8 @@ class BasePadchatClient(WebSocketClient):
         if self.user:
             user_profile = UserProfile()
             user_profile.save(self.user, self._wx_data, self._token)
+            return True
+        return False
 
     @staticmethod
     def load_users():

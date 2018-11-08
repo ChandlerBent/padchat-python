@@ -85,8 +85,10 @@ class PadchatClient(PadChatEventMixin, PadChatAPIMixin, PadchatPushMixin,
         yield self.login_token_padchat()
         if self._wx_data and self._token:
             self._token = self._token
-            self.save_user()
-            logger.info('保存用户登陆信息成功。')
+            if self.save_user():
+                logger.info('保存用户登陆信息成功。')
+            else:
+                logger.error('保存用户登陆信息失败。')
         else:
             logger.error('保存用户登陆信息失败。')
 

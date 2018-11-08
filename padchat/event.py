@@ -117,6 +117,7 @@ class PadChatEventMixin:
             sub_status = data.get('sub_status')
             if sub_status == 0:
                 logger.info('扫码成功！登录成功！')
+                self.user = User(**data)
             elif sub_status == 1:
                 logger.info('扫码成功！登录失败！')
                 self.re_init_padchat()
